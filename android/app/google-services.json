@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1098203185315",
+    "project_id": "food-alert-9400d",
+    "storage_bucket": "food-alert-9400d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098203185315:android:208b60b8f1903f8a2bff16",
+        "android_client_info": {
+          "package_name": "com.goddrew.foodalert"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1098203185315-88mja7pcp3dd3vdd7kdb455h0vt2oclb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2hAWqc9RTaf4BarMogRzv7cSoakPY0X8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1098203185315-88mja7pcp3dd3vdd7kdb455h0vt2oclb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
