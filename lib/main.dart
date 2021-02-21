@@ -67,28 +67,44 @@ class _HomePageState extends State<HomePage> {
         title: Text('Food Alert'),
       ),
       body: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.pushNamed(context, '/drop');
-              },
-              icon: Icon(Icons.food_bank),
-              label: const Text('Drop Off'),
-              heroTag: null,
-            ),
-            FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.pushNamed(context, '/pickup');
-              },
-              icon: Icon(Icons.fastfood),
-              label: const Text('Pick Up'),
-              heroTag: null,
-            ),
-          ],
-        ),
-      ),
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Spacer(),
+          Icon(
+            Icons.food_bank,
+            size: MediaQuery.of(context).size.width * 0.4,
+          ),
+          SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/drop');
+                },
+                icon: Icon(Icons.pin_drop),
+                label: const Text('Drop Off'),
+                heroTag: null,
+              ),
+              FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/pickup');
+                },
+                icon: Icon(Icons.fastfood),
+                label: const Text('Pick Up'),
+                heroTag: null,
+              ),
+            ],
+          ),
+          Spacer(),
+          IconButton(icon: Icon(Icons.info), onPressed: () {}),
+          SizedBox(
+            height: 20,
+          )
+        ],
+      )),
     );
   }
 }
@@ -224,19 +240,23 @@ class _DropPageState extends State<DropPage> {
                                                 children: [
                                                   CameraPreview(
                                                       cameraController),
-                                                  FloatingActionButton(
-                                                    onPressed: () async {
-                                                      try {
-                                                        await initializeControllerFuture;
-                                                        XFile temp =
-                                                            await cameraController
-                                                                .takePicture();
-                                                        image = File(temp.path);
-                                                      } catch (e) {}
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child: Icon(Icons.camera),
-                                                  ),
+                                                  Container(
+                                                    margin: EdgeInsets.all(10),
+                                                    child: FloatingActionButton(
+                                                      onPressed: () async {
+                                                        try {
+                                                          await initializeControllerFuture;
+                                                          XFile temp =
+                                                              await cameraController
+                                                                  .takePicture();
+                                                          image =
+                                                              File(temp.path);
+                                                        } catch (e) {}
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: Icon(Icons.camera),
+                                                    ),
+                                                  )
                                                 ],
                                               ),
                                             ),
@@ -248,32 +268,52 @@ class _DropPageState extends State<DropPage> {
                                 SizedBox(height: 10),
                                 ElevatedButton(
                                   onPressed: () async {
-                                    try {
-                                      String image_name =
-                                          '${DateTime.now()}.png';
+                                    if (Geolocator.distanceBetween(
+                                            currentPosition.latitude,
+                                            currentPosition.longitude,
+                                            selectedPosition.latitude,
+                                            selectedPosition.longitude) <
+                                        10) {
+                                      try {
+                                        String image_name =
+                                            '${DateTime.now()}.png';
 
-                                      if (image != null) {
-                                        print('image put');
-                                        print(image_name);
-                                        await storage
-                                            .ref(image_name)
-                                            .putFile(image);
-                                        await firestore.collection('food').add({
-                                          'desc': descriptionController.text,
-                                          'lat': selectedPosition.latitude,
-                                          'lng': selectedPosition.longitude,
-                                          'img': image_name,
-                                        });
-                                      } else {
-                                        await firestore.collection('food').add({
-                                          'desc': descriptionController.text,
-                                          'lat': selectedPosition.latitude,
-                                          'lng': selectedPosition.longitude,
-                                          'img': 'none',
-                                        });
-                                      }
-                                    } catch (e) {}
-                                    Navigator.pop(context);
+                                        if (image != null) {
+                                          await storage
+                                              .ref(image_name)
+                                              .putFile(image);
+                                          await firestore
+                                              .collection('food')
+                                              .add({
+                                            'desc': descriptionController.text,
+                                            'lat': selectedPosition.latitude,
+                                            'lng': selectedPosition.longitude,
+                                            'img': image_name,
+                                          });
+                                        } else {
+                                          await firestore
+                                              .collection('food')
+                                              .add({
+                                            'desc': descriptionController.text,
+                                            'lat': selectedPosition.latitude,
+                                            'lng': selectedPosition.longitude,
+                                            'img': 'none',
+                                          });
+                                        }
+                                      } catch (e) {}
+                                      Navigator.pop(context);
+                                    } else {
+                                      print('outside 10 meters');
+                                      showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: const Text('Error'),
+                                              content: const Text(
+                                                  'Please set marker to with in 10 meters of your location.'),
+                                            );
+                                          });
+                                    }
                                   },
                                   child: const Text('Submit'),
                                 ),
@@ -286,6 +326,9 @@ class _DropPageState extends State<DropPage> {
               },
               child: Icon(Icons.add),
               heroTag: null,
+            ),
+            SizedBox(
+              width: 10,
             ),
             FloatingActionButton(
               onPressed: () {
@@ -313,6 +356,7 @@ class _PickupPageState extends State<PickupPage> {
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
+
   void getCurrentPosition() async {
     LocationPermission perm = await Geolocator.checkPermission();
     print(perm);
@@ -334,50 +378,56 @@ class _PickupPageState extends State<PickupPage> {
     s.docs.forEach((element) async {
       double lat = element['lat'];
       double lng = element['lng'];
-      String desc = element['desc'];
-      String img = (element['img'] == 'none')
-          ? 'none'
-          : await storage.ref(element['img']).getDownloadURL();
-      setState(() {
-        markers[MarkerId(element.id)] = new Marker(
-          markerId: MarkerId(element.id),
-          position: LatLng(lat, lng),
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return Dialog(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      (img != 'none')
-                          ? Image.network(img)
-                          : Container(
-                              margin: EdgeInsets.all(20),
-                              child: Icon(Icons.image_not_supported),
-                            ),
-                      Container(
-                        margin: EdgeInsets.all(20),
-                        child: Text(desc),
-                      ),
-                      ElevatedButton(
-                          onPressed: () async {
-                            await firestore.doc('food/' + element.id).delete();
-                            setState(() {
-                              markers.remove(MarkerId(element.id));
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Pickup Item')),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      });
+      if (Geolocator.distanceBetween(
+              lat, lng, currentPosition.latitude, currentPosition.longitude) <
+          1000) {
+        String desc = element['desc'];
+        String img = (element['img'] == 'none')
+            ? 'none'
+            : await storage.ref(element['img']).getDownloadURL();
+        setState(() {
+          markers[MarkerId(element.id)] = new Marker(
+            markerId: MarkerId(element.id),
+            position: LatLng(lat, lng),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return Dialog(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        (img != 'none')
+                            ? Image.network(img)
+                            : Container(
+                                margin: EdgeInsets.all(20),
+                                child: Icon(Icons.image_not_supported),
+                              ),
+                        Container(
+                          margin: EdgeInsets.all(20),
+                          child: Text(desc),
+                        ),
+                        ElevatedButton(
+                            onPressed: () async {
+                              await firestore
+                                  .doc('food/' + element.id)
+                                  .delete();
+                              setState(() {
+                                markers.remove(MarkerId(element.id));
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Pickup Item')),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        });
+      }
     });
   }
 
