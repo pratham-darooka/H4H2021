@@ -1,6 +1,6 @@
 # foodalert
 
-A new Flutter project.
+Hackathon project for relaying letfovers in a vicinity.
 
 ## Getting Started
 
